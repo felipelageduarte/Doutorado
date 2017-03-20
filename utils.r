@@ -7,12 +7,23 @@ mddl <-function(obs, pred){
     TSDecomposition::mddl(obs, pred, plot=FALSE)
 }
 
+tdiff <- function(obs, pred){
+    n.elem = length(pred)
+	delta  = length(obs) - length(pred)
+
+    if(delta == 0){
+        return(mean(abs(obs-pred)))
+    } else {
+        return(min(lapply(0:delta, function(x) mean(abs(pred, obs[(1+x):(n.elem+x),]))))
+    }
+}
+
 mda <- function(obs, pred, m, d){
-    at1 = embedd(obs,  m=m, d=d)
-    at2 = embedd(pred, m=m, d=d)
+    at1 = embedd(pred, m=m, d=d)
+    at2 = embedd(obs,  m=m, d=d)
 
     n.elem = nrow(at1)
-    delta = nrow(at2) - nrow(at1)
+    delta  = nrow(at2) - nrow(at1)
 
     if(delta == 0){
         return(md.dist(at1, at2))
@@ -50,12 +61,14 @@ foreachParam <- function(series, F, hyperparameters){
           
 evaluateResult <- function(obs, resultSeries, m, d){
     resultTable = matrix(ncol=3,nrow=nrow(resultSeries))
-    resultTable[,1:2] = apply(resultSeries, 
+    resultTable[,1:3] = apply(resultSeries, 
                               1, 
-                              function(pred) c(TSDecomposition::mddl(obs, pred, plot=FALSE), mda(obs, pred, m, d)))
+                              function(pred) c(TSDecomposition::mddl(obs, pred, plot=FALSE), 
+                                               mda(obs, pred, m, d),
+                                               tdiff(obs, pred)))
     standMddl = (resultTable[,1] - mean(resultTable[,1]))/(sd(resultTable[,1]))
     standMda  = (resultTable[,2] - mean(resultTable[,2]))/(sd(resultTable[,2]))
-    resultTable[,3] = sqrt(standMddl^2 + standMda^2)
+    resultTable[,4] = sqrt(standMddl^2 + standMda^2)
     colnames(resultTable) = c('MDDL', 'MDA', 'Dist')
     resultTable
 }
@@ -86,7 +99,7 @@ gridSearch <- function(F, hyperparameters, seriesList, modelFolder, techName, co
         startTime = Sys.time()
         validTestIdx   = which(rowSums(resultSeries) > 0)
         resultTableAux = evaluateResult(seriesObj$det.series[trainIdx], resultSeries[validTestIdx,], m, d)
-        bestParamIdx   = which.min(resultTableAux[,3])
+        bestParamIdx   = which.min(resultTableAux[,4])
         resultTableAux = cbind( rep(techName,nrow(resultTableAux)),
                                 apply(hyperparameters[validTestIdx], 1, function(x) paste(x, collapse=",")),
                                 resultTableAux
