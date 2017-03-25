@@ -1,4 +1,3 @@
-setwd("~/Dropbox/USP/Doutorado/ForceDecPaper")
 
 require(TSDecomposition)
 require(foreach)
