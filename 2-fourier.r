@@ -23,6 +23,7 @@ fourierDec <- function(series, par){
     coeffs = fft(series)
     mags   = coeffs[1:(length(coeffs)/2)]
     mags   = 1+sqrt(Re(mags)^2+Im(mags)^2)
+    if(freq.cutoff > length(mags))  stop('Frequence does not exist')
     o.idx  = order(mags, decreasing = T)
     idx    = (1:length(mags))[-o.idx[1:freq.cutoff]]
 
@@ -35,7 +36,7 @@ fourierDec <- function(series, par){
 
 #all combination of possible parameters for Fourier Algorithm
 params = expand.grid(
-  cutoff = 1:10,
+  cutoff = 1:450,
   stringsAsFactors = FALSE
 )
 
