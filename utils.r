@@ -14,7 +14,7 @@ tdiff <- function(obs, pred){
     if(delta == 0){
         return(mean(abs(obs-pred)))
     } else {
-        return(min(lapply(0:delta, function(x) mean(abs(pred, obs[(1+x):(n.elem+x),]))))
+        return(min(lapply(0:delta, function(x) mean(abs(pred, obs[(1+x):(n.elem+x),])))))
     }
 }
 
@@ -60,7 +60,7 @@ foreachParam <- function(series, F, hyperparameters){
 }
           
 evaluateResult <- function(obs, resultSeries, m, d){
-    resultTable = matrix(ncol=3,nrow=nrow(resultSeries))
+	resultTable = matrix(ncol=4,nrow=nrow(resultSeries))
     resultTable[,1:3] = apply(resultSeries, 
                               1, 
                               function(pred) c(TSDecomposition::mddl(obs, pred, plot=FALSE), 
@@ -69,7 +69,7 @@ evaluateResult <- function(obs, resultSeries, m, d){
     standMddl = (resultTable[,1] - mean(resultTable[,1]))/(sd(resultTable[,1]))
     standMda  = (resultTable[,2] - mean(resultTable[,2]))/(sd(resultTable[,2]))
     resultTable[,4] = sqrt(standMddl^2 + standMda^2)
-    colnames(resultTable) = c('MDDL', 'MDA', 'Dist')
+    colnames(resultTable) = c('MDDL', 'MDA','tdiff', 'Dist')
     resultTable
 }
     
@@ -77,7 +77,8 @@ gridSearch <- function(F, hyperparameters, seriesList, modelFolder, techName, co
 
     registerDoMC(cores)
 
-    resultTable = foreach(i=1:length(seriesList), .combine='rbind') %dopar% {
+    #resultTable = 
+		foreach(i=1:length(seriesList), .combine='rbind') %dopar% {
         #load series object from RData file
         seriesObj = seriesList[[i]]
         m = unlist(seriesObj$det.embDim)
@@ -98,10 +99,12 @@ gridSearch <- function(F, hyperparameters, seriesList, modelFolder, techName, co
         if(verbose) cat(paste('ts:',i,'- evaluation: begin','\n'))
         startTime = Sys.time()
         validTestIdx   = which(rowSums(resultSeries) > 0)
-        resultTableAux = evaluateResult(seriesObj$det.series[trainIdx], resultSeries[validTestIdx,], m, d)
+        resultTableAux = c()
+		resultTableAux = evaluateResult(seriesObj$det.series[trainIdx], resultSeries[validTestIdx,], m, d)
         bestParamIdx   = which.min(resultTableAux[,4])
-        resultTableAux = cbind( rep(techName,nrow(resultTableAux)),
-                                apply(hyperparameters[validTestIdx], 1, function(x) paste(x, collapse=",")),
+        
+		resultTableAux = cbind( rep(techName,nrow(resultTableAux)),
+                                apply( matrix(hyperparameters[validTestIdx,]), 1, function(x) paste(x, collapse=",")),
                                 resultTableAux
                               )
         endTime = Sys.time()
@@ -110,20 +113,18 @@ gridSearch <- function(F, hyperparameters, seriesList, modelFolder, techName, co
         if(verbose) cat(paste('ts:',i,'- test series evaluation: begin','\n'))
         startTime = Sys.time()
         #run best model with test data and evaluate it
-        bestP = hyperparameters[validTestIdx[bestParamIdx],]
-        pred  = F(seriesObj$series[testIdx], bestP)
+		bestP = hyperparameters[validTestIdx[bestParamIdx],]
+		pred  = F(seriesObj$series[testIdx], bestP)
         obs   = seriesObj$det.series[testIdx]
         mddlR = mddl(obs, pred)
         mdaR  = mda (obs, pred, seriesObj$det.embDim, seriesObj$det.sepDim)
         
         #save model result into model folder
-        model = list( model.name = tech.name, F = F, best.param = bestP, mda = mdaR, mddl = mddlR )
+        model = list( model.name = techName, F = F, best.param = bestP, mda = mdaR, mddl = mddlR )
         save(model, file=paste(modelFolder, '/', techName, '_', gsub("[^\\d]+", "", i, perl=TRUE) ,'.RData',sep=''))
         endTime = Sys.time()
         if(verbose) cat(paste('ts:',i,'- test series evaluation: done - ', endTime - startTime,'\n'))
-                          
-        resultTableAux
+        #resultTableAux
     }
-
-    return(resultTable)
+    #return(resultTable)
 }

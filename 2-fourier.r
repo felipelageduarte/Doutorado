@@ -34,7 +34,7 @@ fourierDec <- function(series, par){
 
 #all combination of possible parameters for Fourier Algorithm
 hyperparameters = expand.grid(
-  cutoff = 1:500,
+  cutoff = 1:10,
   stringsAsFactors = FALSE
 )
 
