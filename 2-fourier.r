@@ -1,4 +1,3 @@
-setwd("~/Dropbox/USP/Doutorado/ForceDecPaper")
 
 require(TSDecomposition)
 require(foreach)
@@ -35,7 +34,7 @@ fourierDec <- function(series, par){
 
 #all combination of possible parameters for Fourier Algorithm
 params = expand.grid(
-  cutoff = 1:10,
+  cutoff = 1:500,
   stringsAsFactors = FALSE
 )
 

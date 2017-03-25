@@ -125,7 +125,7 @@ gridSearch <- function(F, params, seriesList, modelFolder, techName,
 
     #save model result into model folder
     model = list( model.name = techName, F = F, best.param = bestP, eval = result )
-    save(model, file=paste(modelFolder, '/', techName, '_', gsub("[^\\d]+", "", i, perl=TRUE) ,'.RData',sep=''))
+    save(model, file=paste(modelFolder, '/', techName, '_', formatC(i, width=2, format='d', flag='0') ,'.RData',sep=''))
     et = Sys.time()
     if(v) cat(paste('ts:',i,'- test series evaluation: done - ', et-st,'\n'))
     resultTableAux
