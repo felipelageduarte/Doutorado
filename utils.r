@@ -45,9 +45,9 @@ exec <- function(s, F, param){
   tryCatch({
       result = F(s, param)
   }, warning = function(w){
-    write(paste('WARN:', w, '\n'), stderr())
+    #write(paste('WARN:', w, '\n'), stderr())
   }, error = function(e){
-    write(paste('ERRO:', e, '\n'), stderr())
+    #write(paste('ERRO:', e, '\n'), stderr())
   })
   if(is.null(result)) result = rep(0, length(s))
   return(result)
