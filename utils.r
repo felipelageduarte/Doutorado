@@ -106,7 +106,7 @@ gridSearch <- function(F, params, seriesList, modelFolder, techName,
                                     resultSeries[validTestIdx,], m, d)
     bestParamIdx   = which.min(resultTableAux$Dist)
 		resultTableAux = cbind(rep(techName,nrow(resultTableAux)),
-                           apply(matrix(params[validTestIdx,]), 1,
+                           apply(params[validTestIdx,], 1,
                                  function(x) paste(x, collapse=",")),
                            resultTableAux
                           )
