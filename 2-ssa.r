@@ -51,7 +51,7 @@ params = expand.grid(
   stringsAsFactors = FALSE
 )
 
-resultTable = gridSearch(fourierDec, params, seriesList,
+resultTable = gridSearch(ssaDec, params, seriesList,
                          modelFolder, 'SSA', cores, TRUE)
 
 write.csv(resultTable, file=paste(resultFolder,'/ssa.csv', sep=''), row.names=FALSE)
