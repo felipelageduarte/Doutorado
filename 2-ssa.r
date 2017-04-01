@@ -16,13 +16,12 @@ resultFolder = 'testResult'
 
 seriesList = loadSeriesFile(dataFolder)
 
-ssaDec <- function(seriesObj, par){
+ssaDec <- function(series, par){
 
   L        = unlist(par[1])
   neig     = unlist(par[2])
   kind     = unlist(par[3])
   circular = unlist(par[4])
-  series   = seriesObj$series
 
   #execute
   s = ssa(series, L=L, neig=neig, kind=kind, circular=circular)
@@ -44,14 +43,14 @@ ssaDec <- function(seriesObj, par){
 }
 
 params = expand.grid(
-  L = 10:50,
+  list(L = 10:50,
   neig = 10:50,
   kind = c('1d-ssa', 'toeplitz-ssa', 'mssa', 'cssa', 'cssa', '2d-ssa', 'nd-ssa'),
-  circular = c(TRUE, FALSE),
+  circular = c(TRUE, FALSE)),
   stringsAsFactors = FALSE
 )
 
-resultTable = gridSearch(fourierDec, params, seriesList,
+resultTable = gridSearch(ssaDec, params, seriesList,
                          modelFolder, 'SSA', cores, TRUE)
 
 write.csv(resultTable, file=paste(resultFolder,'/ssa.csv', sep=''), row.names=FALSE)

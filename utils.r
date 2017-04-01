@@ -54,6 +54,7 @@ exec <- function(s, F, param){
 }
 
 foreachParam <- function(s, F, params){
+  if(is.null(params)) return(exec(s, F, NULL))
   return(t(apply(params, 1, function(x) exec(s, F, x))))
 }
 
@@ -68,9 +69,13 @@ evaluate <- function(obs, pred, m, d){
 evaluateResult <- function(obs, resultSeries, m, d){
 	resultTable = matrix(ncol=5, nrow=nrow(resultSeries))
   resultTable[,1:4] = apply(resultSeries, 1, function(pred) evaluate(obs, pred, m, d))
-  standMddl = (resultTable[,1] - mean(resultTable[,1]))/(sd(resultTable[,1]))
-  standMda  = (resultTable[,2] - mean(resultTable[,2]))/(sd(resultTable[,2]))
-  resultTable[,5] = sqrt(standMddl^2 + standMda^2)
+  if(nrow(resultTable) == 1){
+    resultTable[,5] = sqrt(resultTable[,1]^2 + resultTable[,2]^2)
+  } else {
+    standMddl = (resultTable[,1] - mean(resultTable[,1]))/(sd(resultTable[,1]))
+    standMda  = (resultTable[,2] - mean(resultTable[,2]))/(sd(resultTable[,2]))
+    resultTable[,5] = sqrt(standMddl^2 + standMda^2)
+  }
   colnames(resultTable) = c('MDDL', 'MDA','MAE', 'RMSE', 'Dist')
   return(data.frame(resultTable))
 }
@@ -101,15 +106,23 @@ gridSearch <- function(F, params, seriesList, modelFolder, techName,
 
     if(v) cat(paste('ts:',i,'- evaluation: begin','\n'))
     st = Sys.time()
-    validTestIdx   = which(abs(rowSums(resultSeries)) > 0)
+
+    validTestIdx = c(1)
+    if(is.vector(resultSeries)){
+      resultSeries = t(resultSeries)
+    } else {
+      validTestIdx   = which(abs(rowSums(resultSeries)) > 0)
+      resultSeries = resultSeries[validTestIdx,]
+    }
     resultTableAux = evaluateResult(seriesObj$det.series[trainIdx],
-                                    resultSeries[validTestIdx,], m, d)
+                                    resultSeries, m, d)
     bestParamIdx   = which.min(resultTableAux$Dist)
+    bestParams     = toString(params)
+    if(validTestIdx != 1)
+      bestParams  = apply(params[validTestIdx,], 1,
+                          function(x) paste(x, collapse=","))
 		resultTableAux = cbind(rep(techName,nrow(resultTableAux)),
-                           apply(params[validTestIdx,], 1,
-                                 function(x) paste(x, collapse=",")),
-                           resultTableAux
-                          )
+		                       bestParams, resultTableAux)
 		colnames(resultTableAux) = c('Tech','Param',  'MDDL', 'MDA','MAE', 'RMSE', 'Dist')
 		resultTableAux = data.frame(resultTableAux)
     et = Sys.time()
