@@ -44,6 +44,7 @@ exec <- function(s, F, param){
   result = c()
   tryCatch({
       result = F(s, param)
+      ts.plot(result)
   }, warning = function(w){
     write(paste('WARN:', w, '\n'), stderr())
   }, error = function(e){
