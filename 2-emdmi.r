@@ -21,7 +21,7 @@ calcPhase <- function(x){
   atan(Im(fft)/Re(fft))
 }
 
-emdmiDec2 <- function(series, par){
+emdmiDec <- function(series, par){
   r.emd  = emd(xt = series,  tt = 1:length(series), boundary = 'wave')
   phases = apply(r.emd$imf, 2, function(x){calcPhase(x)})
   phases = cbind(phases, calcPhase(r.emd$residue))
