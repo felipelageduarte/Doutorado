@@ -60,8 +60,8 @@ forceDec   <- function(seriesObj, par, test.execution=TRUE){
 params = expand.grid(
   k = c(2:10,25,50),
   num.it = 30,
-  epsilon = 10^-6,
-  delta = c(0.01, seq(0.05, 1, by=0.05))
+  epsilon = seq(0.001, 0.01,by=0.001),
+  delta = c(0, 0.25, 0.5, 0.75, 1)
 )
 
 resultTable = gridSearch(waveletDec, params, seriesList, modelFolder, 'forcedec', cores)
