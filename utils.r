@@ -145,8 +145,7 @@ gridSearch <- function(F, params, seriesList, modelFolder, techName, cores = 1){
     save(model, file=paste(modelFolder, '/', techName, '_',
                            formatC(i, width=2, format='d', flag='0') ,'.RData',sep=''))
 
-    et = Sys.time()
-    cat(paste('ts:',i,'- done - ', et-st,'\n'))
+    cat(paste('ts:',i,'- done - ', Sys.time()-st,'\n'))
     rTable
   }
   return(resultTable)

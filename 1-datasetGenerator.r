@@ -12,7 +12,7 @@ getDeterministicSeries <- function(comp, size = 1000){
 
   if(tolower(comp) == 'sine'){
     return(list( det.series = normalize(sin(2*pi*seq(0,9,len=size))),
-                 det.sepDim = 5,
+                 det.sepDim = 20,
                  det.embDim = 2,
                  det.model  = "sine" ,
                  det.length = size)
