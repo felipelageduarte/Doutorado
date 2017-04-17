@@ -16,12 +16,11 @@ resultFolder = 'testResult'
 
 seriesList = loadSeriesFile(dataFolder)
 
-emdrpDec   <- function(seriesObj, params){
+emdrpDec   <- function(series, params){
   detlevel = unlist(params[1])
   thresh   = unlist(params[2])
-  delay    = seriesObj$det.sepDim + unlist(params[3])
-  embedded = seriesObj$det.embDim + unlist(params[4])
-  series   = seriesObj$series
+  delay    = unlist(params[3])
+  embedded = unlist(params[4])
   emdrp    = rpemdDecomposition(series, detlevel, thresh, delay, embedded)
   return(emdrp@deterministic)
 }
