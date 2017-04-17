@@ -1,7 +1,7 @@
 
 source('utils.r')
 
-cores = 1#detectCores(all.tests = FALSE, logical = TRUE)
+cores = detectCores(all.tests = FALSE, logical = TRUE)
 
 dataFolder = 'data'
 modelFolder  = 'model'
