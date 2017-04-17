@@ -117,7 +117,10 @@ foreachParam <- function(s, F, params){
 }
 
 gridSearch <- function(F, params, seriesList, modelFolder, techName, cores = 1){
-  resultTable =	foreach::foreach(i=1:3#length(seriesList)
+
+  doMC::registerDoMC(cores)
+
+  resultTable =	foreach::foreach(i=1:length(seriesList)
                                  , .combine='rbind') %dopar% {
     st = Sys.time()
     cat(paste('ts:',i,'- begin\n'))
