@@ -1,11 +1,4 @@
 
-require(TSDecomposition)
-require(foreach)
-require(parallel)
-require(doMC)
-require(Rssa)
-require(FNN)
-
 source('utils.r')
 
 cores = detectCores(all.tests = FALSE, logical = TRUE)
@@ -36,14 +29,18 @@ emdmiDec <- function(series, par){
   }
   idx    = l:r.emd$nimf
   if(length(idx) > 1){
-    plot(rowSums(r.emd$imf[,idx]) + r.emd$residue)
     return(rowSums(r.emd$imf[,idx]) + r.emd$residue)
   } else{
     return(r.emd$imf[,idx] + r.emd$residue)
   }
 }
 
-resultTable = gridSearch(emdmiDec, NULL, seriesList, modelFolder, 'emdmi', cores, TRUE)
+params = expand.grid(
+  none = '',
+  stringsAsFactors = FALSE
+)
 
-write.csv(resultTable, file=paste(resultFolder,'/wavelet.csv', sep=''), row.names=FALSE)
+resultTable = gridSearch(emdmiDec, params, seriesList, modelFolder, 'emdmi', cores)
+
+write.csv(resultTable, file=paste(resultFolder,'/emdmi.csv', sep=''), row.names=FALSE)
 

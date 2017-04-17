@@ -21,10 +21,9 @@ ssaDec <- function(series, par){
   L        = unlist(par[1])
   neig     = unlist(par[2])
   kind     = unlist(par[3])
-  circular = unlist(par[4])
 
   #execute
-  s = ssa(series, L=L, neig=neig, kind=kind, circular=circular)
+  s = ssa(series, L=L, neig=neig, kind=kind)
   r = reconstruct(s, groups = seq(1:(L/2)))
 
   #mutual information to separate deterministic components
@@ -43,15 +42,13 @@ ssaDec <- function(series, par){
 }
 
 params = expand.grid(
-  list(L = 10:50,
-  neig = 10:50,
-  kind = c('1d-ssa', 'toeplitz-ssa', 'mssa', 'cssa', 'cssa', '2d-ssa', 'nd-ssa'),
-  circular = c(TRUE, FALSE)),
+  list(L = c(2:10,25,50),
+  neig = c(2:10,25,50),
+  kind = c('1d-ssa', 'toeplitz-ssa', 'mssa', '2d-ssa', 'nd-ssa')),
   stringsAsFactors = FALSE
 )
 
-resultTable = gridSearch(ssaDec, params, seriesList,
-                         modelFolder, 'SSA', cores, TRUE)
+resultTable = gridSearch(ssaDec, params, seriesList, modelFolder, 'SSA', cores)
 
 write.csv(resultTable, file=paste(resultFolder,'/ssa.csv', sep=''), row.names=FALSE)
 

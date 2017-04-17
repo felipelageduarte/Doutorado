@@ -16,36 +16,55 @@ resultFolder = 'testResult'
 
 seriesList = loadSeriesFile(dataFolder)
 
-waveletDec <- function(series, par){
-
-  filter   = unlist(par[1])
-  n.levels = as.numeric(unlist(par[2]))
-  boundary = unlist(par[3])
-
-  r.wavelet = wavelets::dwt(series,
-                            filter = filter,
-                            n.levels=n.levels,
-                            boundary=boundary,
-                            fast=TRUE)
-  for (i in 1:length(r.wavelet@W)) {
-    r.wavelet@W[[i]] = cbind(rep(0, length(r.wavelet@W[[i]])))
-  }
-  det = wavelets::idwt(r.wavelet)
-  return(det)
+nn.similarity <- function(neigh.pos.i){
+  neigh.dist     = as.matrix(dist(neigh.pos.i))[1,]
+  similarity     = (1 - (neigh.dist/(max(neigh.dist)+10^-12)))
+  similarity[-1] = similarity[-1]/sum(similarity[-1])
+  return(similarity)
 }
 
-#all combination of possible parameters for wavelets Algorithm
-hyperparameters = expand.grid(
-  filters = c("haar", "d4", "d6", "d8", "d10", "d12", "d14", "d16", "d18", "d20",#Daubechies
-              "la8", "la10", "la12", "la14", "la16", "la18", "la20", #Least Asymetric
-              "bl14", "bl18", "bl20", #Best Localized
-              "c6", "c12", "c18", "c24", "c30"), #Coiflet
-  n.levels = 1:50,
-  boundarys = c("periodic","reflection"),
-  stringsAsFactors = FALSE
+forceDec   <- function(seriesObj, par, test.execution=TRUE){
+  k        = unlist(par[1])
+  num.it   = unlist(par[2])
+  epsilon  = unlist(par[3])
+  delta    = unlist(par[4])
+  delay    = unlist(par[5])
+  embedded = unlist(par[6])
+
+  s.emb = embedd(series, m=embedded, d=delay)
+  nn = get.knn(s.emb, k=k)$nn.index #search for k-nearest neighbor
+  nn = cbind(1:nrow(nn), nn) #place itself as a neighbor
+
+  for(it in 1:num.it){
+    neigh.pos  = lapply(split(nn, 1:nrow(nn)), function(x){s.emb[x,]})
+    norm.simil = lapply(neigh.pos, function(x){nn.similarity(x)})
+    pos = t(mapply(
+      function(x,y, delta){
+        ((delta * x[1,]) + ((1-delta)  * colSums(x[-1,]*y[-1])))
+      },
+      neigh.pos,
+      norm.simil,
+      MoreArgs = list(delta=delta)
+    ))
+
+    d = s.emb - pos
+    disp = mean(sqrt(diag(d%*%t(d))))
+    cat(paste(disp, '\n'))
+
+    if(disp <= epsilon) break;
+    s.emb = pos
+  }
+  return(s.emb[,1])
+}
+
+params = expand.grid(
+  k = c(2:10,25,50),
+  num.it = 30,
+  epsilon = 10^-6,
+  delta = c(0.01, seq(0.05, 1, by=0.05))
 )
 
-resultTable = gridSearch(waveletDec, hyperparameters, seriesList, modelFolder, 'wavelet', cores, TRUE)
+resultTable = gridSearch(waveletDec, params, seriesList, modelFolder, 'forcedec', cores)
 
-write.csv(resultTable, file=paste(resultFolder,'/wavelet.csv', sep=''), row.names=FALSE)
+write.csv(resultTable, file=paste(resultFolder,'/forcedec.csv', sep=''), row.names=FALSE)
 

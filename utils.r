@@ -1,34 +1,94 @@
+
+require(nonlinearTseries)
+require(TSDecomposition)
+require(tseriesChaos)
+require(fNonlinear)
+require(parallel)
+require(foreach)
+require(doMC)
+require(Rssa)
+require(FNN)
+
+standardize <- function(x){
+  if(length(x) == 1) return(x)
+  else return((x-mean(x))/(sd(x)))
+}
+normalize <- function(values, a = -1, b = 1){
+  max = max(values)
+  min = min(values)
+  return( a + (((values - min)*(b - a))/(max - min)) )
+}
+
 md.dist <- function(d1, d2){
   d = d1 - d2
-  return(sqrt(diag(d%*%t(d))))
+  return(sqrt(mean(diag(d%*%t(d)))))
 }
-
 mddl <-function(obs, pred){
-  return(TSDecomposition::mddl(obs, pred, plot=FALSE))
+  return(rnorm(1))
+  dtw = dtw(obs, pred)
+  return(distanceToDiagonal(dtw$index1, dtw$index2, length(obs)))
 }
+mae.md <- function(obs, pred, m, d){
+  at1 = tseriesChaos::embedd(pred, m=m, d=d)
+  at2 = tseriesChaos::embedd(obs,  m=m, d=d)
+  n   = nrow(at1)
+  d   = nrow(at2) - nrow(at1)
 
-mda <- function(obs, pred, m, d){
+  if(d == 0) return(mean(abs(at1 - at2)))
+  else return(min(lapply(0:d, function(x) mean(abs(at1 - at2[(1+x):(n+x),])))))
+}
+rmse.md <- function(obs, pred, m, d){
   at1 = tseriesChaos::embedd(pred, m=m, d=d)
   at2 = tseriesChaos::embedd(obs,  m=m, d=d)
   n   = nrow(at1)
   d   = nrow(at2) - nrow(at1)
 
   if(d == 0) return(mean(md.dist(at1, at2)))
-  else return(min(lapply(0:d, function(x) mean(md.dist(at1, at2[(1+x):(n+x),])))))
+  else return(min(lapply(0:d, function(x) md.dist(at1, at2[(1+x):(n+x),]))))
 }
-
 mae <- function(obs, pred){
   n = length(pred)
   d = length(obs) - length(pred)
   if(d == 0)return(mean(abs(obs-pred)))
   else return(min(lapply(0:d,function(x) mean(abs(obs[(1+x):(n+x),]-pred)))))
 }
-
 rmse <- function(obs, pred){
   n = length(pred)
   d = length(obs) - length(pred)
   if(d == 0) return(sqrt(mean((obs-pred)^2)))
   else return(min(lapply(0:d,function(x) sqrt(mean((obs[(1+x):(n+x),]-pred)^2)))))
+}
+evaluateMetrics <- function(obs, pred, m, d){
+  return(c(mddl(obs, pred),
+           mae.md(obs, pred, m, d),
+           rmse.md(obs, pred, m, d),
+           mae(obs, pred),
+           rmse(obs, pred)
+  ))
+}
+evaluateResult <- function(obs, resultSeries, params, techName, testId){
+  resultTable = data.frame(testId   = numeric(0),  tech  = character(0),
+                           paramIdx = numeric(0), param  = character(0),
+                           mddl     = numeric(0), mae_md = numeric(0),
+                           rmse_md  = numeric(0), mae    = numeric(0),
+                           rmse     = numeric(0), dist   = numeric(0))
+
+  validTestIdx = which(abs(rowSums(resultSeries)) > 0)
+  resultSeries = matrix(resultSeries[validTestIdx,], ncol=ncol(resultSeries))
+
+  m = unique(params$m)
+  d = unique(params$d)
+
+  er = apply(resultSeries, 1, function(pred) evaluateMetrics(obs, pred, m, d))
+  resultTable[1:length(validTestIdx),5:9] = er
+  resultTable$dist = sqrt(standardize(resultTable$mddl)^2 +
+                          standardize(resultTable$rmse_md)^2)
+  resultTable$testId = testId
+  resultTable$tech = techName
+  resultTable$paramIdx = validTestIdx
+  resultTable$param = (apply(format(params), 1, paste, collapse=","))[validTestIdx]
+
+  return(resultTable)
 }
 
 loadSeriesFile <- function(seriesFolder){
@@ -39,12 +99,10 @@ loadSeriesFile <- function(seriesFolder){
     seriesList[[i]] = get(load(seriesFile[i]))
   return(seriesList)
 }
-
 exec <- function(s, F, param){
   result = c()
   tryCatch({
       result = F(s, param)
-      ts.plot(result)
   }, warning = function(w){
     write(paste('WARN:', w, '\n'), stderr())
   }, error = function(e){
@@ -53,96 +111,40 @@ exec <- function(s, F, param){
   if(is.null(result)) result = rep(0, length(s))
   return(result)
 }
-
 foreachParam <- function(s, F, params){
   if(is.null(params)) return(exec(s, F, NULL))
   return(t(apply(params, 1, function(x) exec(s, F, x))))
 }
 
-evaluate <- function(obs, pred, m, d){
-  return(c(mddl(obs, pred),
-           mda (obs, pred, m, d),
-           mae (obs, pred),
-           rmse(obs, pred)
-  ))
-}
+gridSearch <- function(F, params, seriesList, modelFolder, techName, cores = 1){
+  resultTable =	foreach::foreach(i=1:3#length(seriesList)
+                                 , .combine='rbind') %dopar% {
+    st = Sys.time()
+    cat(paste('ts:',i,'- begin\n'))
 
-evaluateResult <- function(obs, resultSeries, m, d){
-	resultTable = matrix(ncol=5, nrow=nrow(resultSeries))
-  resultTable[,1:4] = apply(resultSeries, 1, function(pred) evaluate(obs, pred, m, d))
-  if(nrow(resultTable) == 1){
-    resultTable[,5] = sqrt(resultTable[,1]^2 + resultTable[,2]^2)
-  } else {
-    standMddl = (resultTable[,1] - mean(resultTable[,1]))/(sd(resultTable[,1]))
-    standMda  = (resultTable[,2] - mean(resultTable[,2]))/(sd(resultTable[,2]))
-    resultTable[,5] = sqrt(standMddl^2 + standMda^2)
-  }
-  colnames(resultTable) = c('MDDL', 'MDA','MAE', 'RMSE', 'Dist')
-  return(data.frame(resultTable))
-}
-
-gridSearch <- function(F, params, seriesList, modelFolder, techName,
-                       cores = 1, v = FALSE){
-
-  doMC::registerDoMC(cores)
-
-  i=0
-  resultTable =	foreach::foreach(i=1:length(seriesList), .combine='rbind') %dopar% {
     #load series object from RData file
     seriesObj = seriesList[[i]]
-    m = unlist(seriesObj$det.embDim)
-    d = unlist(seriesObj$det.sepDim)
-
-    #Cross-validation out-of-time
-    l = ceiling(0.7*seriesObj$size)
-    trainIdx = 1:(l-1)
-    testIdx  = l:seriesObj$size
+    params$m = unlist(seriesObj$det.embDim)
+    params$d = unlist(seriesObj$det.sepDim)
 
     #Grid Search for better params
-    if(v) cat(paste('ts:',i,'- params tunning: begin\n'))
-    st = Sys.time()
-    resultSeries = foreachParam(seriesObj$series[trainIdx], F, params)
-    et = Sys.time()
-    if(v) cat(paste('ts:',i,'- params tunning: done - ', et-st,'\n'))
+    resultSeries = foreachParam(seriesObj$series, F, params)
 
-    if(v) cat(paste('ts:',i,'- evaluation: begin','\n'))
-    st = Sys.time()
-
-    validTestIdx = c(1)
-    if(is.vector(resultSeries)){
-      resultSeries = t(resultSeries)
-    } else {
-      validTestIdx   = which(abs(rowSums(resultSeries)) > 0)
-      resultSeries = resultSeries[validTestIdx,]
-    }
-    resultTableAux = evaluateResult(seriesObj$det.series[trainIdx],
-                                    resultSeries, m, d)
-    bestParamIdx   = which.min(resultTableAux$Dist)
-    bestParams     = toString(params)
-    if(validTestIdx != 1)
-      bestParams  = apply(params[validTestIdx,], 1,
-                          function(x) paste(x, collapse=","))
-		resultTableAux = cbind(rep(techName,nrow(resultTableAux)),
-		                       bestParams, resultTableAux)
-		colnames(resultTableAux) = c('Tech','Param',  'MDDL', 'MDA','MAE', 'RMSE', 'Dist')
-		resultTableAux = data.frame(resultTableAux)
-    et = Sys.time()
-    if(v) cat(paste('ts:',i,'- evaluation: done - ', et-st,'\n'))
-
-    if(v) cat(paste('ts:',i,'- test series evaluation: begin','\n'))
-    st = Sys.time()
-    #run best model with test data and evaluate it
-		bestP  = params[validTestIdx[bestParamIdx],]
-		pred   = F(seriesObj$series[testIdx], bestP)
-    obs    = seriesObj$det.series[testIdx]
-    result = evaluate(obs, pred, seriesObj$det.embDim, seriesObj$det.sepDim)
+    #evaluate results with know deterministic component
+    det.comp = seriesObj$det.series
+    rTable   = evaluateResult(det.comp, resultSeries, params, techName, i)
+    bestIdx  = which.min(rTable$dist)
 
     #save model result into model folder
-    model = list( model.name = techName, F = F, best.param = bestP, eval = result )
-    save(model, file=paste(modelFolder, '/', techName, '_', formatC(i, width=2, format='d', flag='0') ,'.RData',sep=''))
+    model = list( model.name = techName, F = F,
+                  best.param = params[rTable$ParamIdx[bestIdx],],
+                  eval = rTable[bestIdx,] )
+    save(model, file=paste(modelFolder, '/', techName, '_',
+                           formatC(i, width=2, format='d', flag='0') ,'.RData',sep=''))
+
     et = Sys.time()
-    if(v) cat(paste('ts:',i,'- test series evaluation: done - ', et-st,'\n'))
-    resultTableAux
+    cat(paste('ts:',i,'- done - ', et-st,'\n'))
+    rTable
   }
   return(resultTable)
 }

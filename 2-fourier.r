@@ -1,14 +1,7 @@
 
-require(TSDecomposition)
-require(foreach)
-require(parallel)
-require(doMC)
-require(Rssa)
-require(FNN)
-
 source('utils.r')
 
-cores = detectCores(all.tests = FALSE, logical = TRUE)
+cores = 1#detectCores(all.tests = FALSE, logical = TRUE)
 
 dataFolder = 'data'
 modelFolder  = 'model'
@@ -22,7 +15,6 @@ fourierDec <- function(series, par){
   coeffs = fft(series)
   mags   = coeffs[1:(length(coeffs)/2)]
   mags   = 1+sqrt(Re(mags)^2+Im(mags)^2)
-  if(freq.cutoff > length(mags))  stop('Frequence does not exist')
   o.idx  = order(mags, decreasing = T)
   idx    = (1:length(mags))[-o.idx[1:freq.cutoff]]
 
@@ -35,14 +27,10 @@ fourierDec <- function(series, par){
 
 #all combination of possible parameters for Fourier Algorithm
 params = expand.grid(
-  cutoff = 1:450,
+  cutoff = 1:50,
   stringsAsFactors = FALSE
 )
 
-resultTable = gridSearch(fourierDec, params, seriesList,
-                         modelFolder, 'fourier', cores, TRUE)
+resultTable = gridSearch(fourierDec, params, seriesList, modelFolder, 'fourier', cores)
 
 write.csv(resultTable, file=paste(resultFolder,'/fourier.csv', sep=''), row.names=FALSE)
-
-
-

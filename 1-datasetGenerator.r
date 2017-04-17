@@ -1,17 +1,9 @@
 
 #Include required Librarys
-require(fNonlinear)
-require(tseriesChaos)
-require(nonlinearTseries)
+source('utils.r')
 
-seriesSize = 3000
+seriesSize = 1000
 dataFolder = 'data'
-
-normalize <- function(values, a = -1, b = 1){
-  max = max(values)
-  min = min(values)
-  return( a + (((values - min)*(b - a))/(max - min)) )
-}
 
 getDeterministicSeries <- function(comp, size = 1000){
   if(missing(comp)){
@@ -106,7 +98,7 @@ getStochasticSeries <- function(comp, params=list(), size = 1000){
   } else {
     stop("You must select one of those options for stochastic component: zero, uniforme or normal")
   }
-}      
+}
 
 timeSeriesFactor <- function(det.comp, sto.comp, sto.params=list(), size = 1000){
   det = getDeterministicSeries(det.comp, size)
@@ -124,13 +116,11 @@ sto = list(list(comp="zero"),
          list(comp="uniforme",params=list(min=-0.10, max=0.10)),
          list(comp="uniforme",params=list(min=-0.15, max=0.15)),
          list(comp="uniforme",params=list(min=-0.20, max=0.20)),
-         list(comp="uniforme",params=list(min=-0.25, max=0.25)),
          list(comp="normal",params=list(sd=0.01)),
          list(comp="normal",params=list(sd=0.05)),
          list(comp="normal",params=list(sd=0.10)),
          list(comp="normal",params=list(sd=0.15)),
-         list(comp="normal",params=list(sd=0.20)),
-         list(comp="normal",params=list(sd=0.25))
+         list(comp="normal",params=list(sd=0.20))
          )
 
 idx = 1
