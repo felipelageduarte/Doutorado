@@ -80,6 +80,7 @@ evaluateResult <- function(obs, resultSeries, params, techName, testId){
   d = unique(params$d)
 
   er = apply(resultSeries, 1, function(pred) evaluateMetrics(obs, pred, m, d))
+
   resultTable[1:length(validTestIdx),5:9] = er
   resultTable$dist = sqrt(standardize(resultTable$mddl)^2 +
                           standardize(resultTable$rmse_md)^2)
@@ -99,29 +100,29 @@ loadSeriesFile <- function(seriesFolder){
     seriesList[[i]] = get(load(seriesFile[i]))
   return(seriesList)
 }
-exec <- function(s, F, param){
+exec <- function(F, series, param){
   result = c()
   tryCatch({
-      result = F(s, param)
+      result = F(series, param)
   }, warning = function(w){
     #write(paste('WARN:', w, '\n'), stderr())
   }, error = function(e){
     #write(paste('ERRO:', e, '\n'), stderr())
   })
-  if(is.null(result)) result = rep(0, length(s))
+  if(is.null(result)) result = rep(0, length(series))
   return(result)
 }
-foreachParam <- function(s, F, params){
-  if(is.null(params)) return(exec(s, F, NULL))
-  return(t(apply(params, 1, function(x) exec(s, F, x))))
+
+foreachParam <- function(F, series, params){
+  if(is.null(params)) return(exec(series, F, NULL))
+  return(t(apply(params, 1, function(x) exec(F, series, x))))
 }
 
 gridSearch <- function(F, params, seriesList, modelFolder, techName, cores = 1){
 
   doMC::registerDoMC(cores)
 
-  resultTable =	foreach::foreach(i=1:length(seriesList)
-                                 , .combine='rbind') %dopar% {
+  resultTable =	foreach::foreach(i=1:length(seriesList), .combine='rbind') %dopar% {
     st = Sys.time()
     cat(paste('ts:',i,'- begin\n'))
 
@@ -131,7 +132,7 @@ gridSearch <- function(F, params, seriesList, modelFolder, techName, cores = 1){
     params$d = unlist(seriesObj$det.sepDim)
 
     #Grid Search for better params
-    resultSeries = foreachParam(seriesObj$series, F, params)
+    resultSeries = foreachParam(F, seriesObj$series, params)
 
     #evaluate results with know deterministic component
     det.comp = seriesObj$det.series
