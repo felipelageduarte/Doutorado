@@ -23,7 +23,7 @@ nn.similarity <- function(neigh.pos.i){
   return(similarity)
 }
 
-forceDec   <- function(seriesObj, par, test.execution=TRUE){
+forceDec   <- function(series, par, test.execution=TRUE){
   k        = unlist(par[1])
   num.it   = unlist(par[2])
   epsilon  = unlist(par[3])

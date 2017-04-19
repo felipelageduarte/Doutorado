@@ -8,7 +8,7 @@ require(FNN)
 
 source('utils.r')
 
-cores = detectCores(all.tests = FALSE, logical = TRUE)
+cores = 1#detectCores(all.tests = FALSE, logical = TRUE)
 
 dataFolder = 'data'
 modelFolder  = 'model'
