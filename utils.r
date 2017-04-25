@@ -1,3 +1,4 @@
+#setwd("~/Dropbox/USP/Doutorado/ForceDecPaper")
 
 require(nonlinearTseries)
 require(TSDecomposition)
@@ -35,7 +36,7 @@ mae.md <- function(obs, pred, m, d){
   d   = nrow(at2) - nrow(at1)
 
   if(d == 0) return(mean(abs(at1 - at2)))
-  else return(min(lapply(0:d, function(x) mean(abs(at1 - at2[(1+x):(n+x),])))))
+  else return(min(unlist(lapply(0:d, function(x) mean(abs(at1 - at2[(1+x):(n+x),]))))))
 }
 rmse.md <- function(obs, pred, m, d){
   at1 = tseriesChaos::embedd(pred, m=m, d=d)
@@ -44,19 +45,19 @@ rmse.md <- function(obs, pred, m, d){
   d   = nrow(at2) - nrow(at1)
 
   if(d == 0) return(mean(md.dist(at1, at2)))
-  else return(min(lapply(0:d, function(x) md.dist(at1, at2[(1+x):(n+x),]))))
+  else return(min(unlist(lapply(0:d, function(x) md.dist(at1, at2[(1+x):(n+x),])))))
 }
 mae <- function(obs, pred){
   n = length(pred)
   d = length(obs) - length(pred)
   if(d == 0)return(mean(abs(obs-pred)))
-  else return(min(lapply(0:d,function(x) mean(abs(obs[(1+x):(n+x),]-pred)))))
+  else return(min(unlist(lapply(0:d,function(x) mean(abs(obs[(1+x):(n+x)]-pred))))))
 }
 rmse <- function(obs, pred){
   n = length(pred)
   d = length(obs) - length(pred)
   if(d == 0) return(sqrt(mean((obs-pred)^2)))
-  else return(min(lapply(0:d,function(x) sqrt(mean((obs[(1+x):(n+x),]-pred)^2)))))
+  else return(min(unlist(lapply(0:d,function(x) sqrt(mean((obs[(1+x):(n+x)]-pred)^2))))))
 }
 evaluateMetrics <- function(obs, pred, m, d){
   return(c(mddl(obs, pred),
@@ -81,7 +82,7 @@ evaluateResult <- function(obs, resultSeries, params, techName, testId){
 
   er = apply(resultSeries, 1, function(pred) evaluateMetrics(obs, pred, m, d))
 
-  resultTable[1:length(validTestIdx),5:9] = er
+  resultTable[1:length(validTestIdx),5:9] = t(er)
   resultTable$dist = sqrt(standardize(resultTable$mddl)^2 +
                           standardize(resultTable$rmse_md)^2)
   resultTable$testId = testId

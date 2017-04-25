@@ -47,7 +47,7 @@ params = expand.grid(
   stringsAsFactors = FALSE
 )
 
-resultTable = gridSearch(ssaDec, params, seriesList, modelFolder, 'SSA', cores)
+resultTable = gridSearch(ssaDec, params, seriesList, modelFolder, 'ssa', cores)
 
 write.csv(resultTable, file=paste(resultFolder,'/ssa.csv', sep=''), row.names=FALSE)
 
