@@ -31,7 +31,7 @@ params = expand.grid(
   stringsAsFactors = FALSE
 )
 
-resultTable = gridSearch(emdrpDec, params, seriesList, modelFolder, 'EMDRP', cores)
+resultTable = gridSearch(emdrpDec, params, seriesList, modelFolder, 'emdrp', cores)
 
 write.csv(resultTable, file=paste(resultFolder,'/emdrp.csv', sep=''), row.names=FALSE)
 

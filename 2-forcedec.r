@@ -1,11 +1,4 @@
 
-require(TSDecomposition)
-require(foreach)
-require(parallel)
-require(doMC)
-require(Rssa)
-require(FNN)
-
 source('utils.r')
 
 cores = detectCores(all.tests = FALSE, logical = TRUE)
