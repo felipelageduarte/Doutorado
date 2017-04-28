@@ -19,15 +19,22 @@ normalize <- function(values, a = -1, b = 1){
   min = min(values)
   return( a + (((values - min)*(b - a))/(max - min)) )
 }
-
 md.dist <- function(d1, d2){
   d = d1 - d2
-  return(sqrt(mean(diag(d%*%t(d)))))
+  return(sqrt(sum(diag(d%*%t(d)))))
 }
 mddl <-function(obs, pred){
   return(rnorm(1))
   dtw = dtw(obs, pred)
   return(distanceToDiagonal(dtw$index1, dtw$index2, length(obs)))
+}
+mda <- function(obs, pred, m, d){
+  at1 = tseriesChaos::embedd(pred, m=m, d=d)
+  at2 = tseriesChaos::embedd(obs,  m=m, d=d)
+  n   = nrow(at1)
+  d   = nrow(at2) - nrow(at1)
+  if(d == 0) return(mean(md.dist(at1,at2)))
+  else return(min(unlist(lapply(0:d, function(x) mean(md.dist(at1, at2[(1+x):(n+x),]))))))
 }
 mae.md <- function(obs, pred, m, d){
   at1 = tseriesChaos::embedd(pred, m=m, d=d)
@@ -38,6 +45,10 @@ mae.md <- function(obs, pred, m, d){
   if(d == 0) return(mean(abs(at1 - at2)))
   else return(min(unlist(lapply(0:d, function(x) mean(abs(at1 - at2[(1+x):(n+x),]))))))
 }
+rmse.md.aux <- function(d1, d2){
+  d = d1 - d2
+  return(sqrt(mean(diag(d%*%t(d)))))
+}
 rmse.md <- function(obs, pred, m, d){
   at1 = tseriesChaos::embedd(pred, m=m, d=d)
   at2 = tseriesChaos::embedd(obs,  m=m, d=d)
@@ -45,7 +56,7 @@ rmse.md <- function(obs, pred, m, d){
   d   = nrow(at2) - nrow(at1)
 
   if(d == 0) return(mean(md.dist(at1, at2)))
-  else return(min(unlist(lapply(0:d, function(x) md.dist(at1, at2[(1+x):(n+x),])))))
+  else return(min(unlist(lapply(0:d, function(x) rmse.md.aux(at1, at2[(1+x):(n+x),])))))
 }
 mae <- function(obs, pred){
   n = length(pred)
@@ -61,6 +72,7 @@ rmse <- function(obs, pred){
 }
 evaluateMetrics <- function(obs, pred, m, d){
   return(c(mddl(obs, pred),
+           mda(obs, pred, m, d),
            mae.md(obs, pred, m, d),
            rmse.md(obs, pred, m, d),
            mae(obs, pred),
@@ -68,11 +80,12 @@ evaluateMetrics <- function(obs, pred, m, d){
   ))
 }
 evaluateResult <- function(obs, resultSeries, params, techName, testId){
-  resultTable = data.frame(testId   = numeric(0),  tech  = character(0),
-                           paramIdx = numeric(0), param  = character(0),
-                           mddl     = numeric(0), mae_md = numeric(0),
-                           rmse_md  = numeric(0), mae    = numeric(0),
-                           rmse     = numeric(0), dist   = numeric(0))
+  resultTable = data.frame(testId   = numeric(0),  tech   = character(0),
+                           paramIdx = numeric(0), param   = character(0),
+                           mddl     = numeric(0), mda     = numeric(0),
+                           mae_md   = numeric(0), rmse_md = numeric(0),
+                           mae      = numeric(0), rmse    = numeric(0),
+                           dist     = numeric(0))
 
   validTestIdx = which(abs(rowSums(resultSeries)) > 0)
   resultSeries = matrix(resultSeries[validTestIdx,], ncol=ncol(resultSeries))
@@ -82,9 +95,9 @@ evaluateResult <- function(obs, resultSeries, params, techName, testId){
 
   er = apply(resultSeries, 1, function(pred) evaluateMetrics(obs, pred, m, d))
 
-  resultTable[1:length(validTestIdx),5:9] = t(er)
+  resultTable[1:length(validTestIdx),5:10] = t(er)
   resultTable$dist = sqrt(standardize(resultTable$mddl)^2 +
-                          standardize(resultTable$rmse_md)^2)
+                          standardize(resultTable$mda)^2)
   resultTable$testId = testId
   resultTable$tech = techName
   resultTable$paramIdx = validTestIdx
@@ -92,7 +105,6 @@ evaluateResult <- function(obs, resultSeries, params, techName, testId){
 
   return(resultTable)
 }
-
 loadSeriesFile <- function(seriesFolder){
   #select all series file in the data folder
   seriesFile = list.files(path = seriesFolder, full.names = TRUE)
