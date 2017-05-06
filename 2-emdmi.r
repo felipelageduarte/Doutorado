@@ -11,7 +11,9 @@ seriesList = loadSeriesFile(dataFolder)
 
 calcPhase <- function(x){
   fft = fft(x)
-  atan(Im(fft)/Re(fft))
+  r   = atan(Im(fft)/Re(fft))
+  r[which(is.nan(r))] = 0
+  return(r)
 }
 
 emd.fixed <- function(xt, tt=NULL, tol=sd(xt)*0.1^2, max.sift=20, stoprule="type1",
