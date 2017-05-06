@@ -155,7 +155,7 @@ gridSearch <- function(F, params, seriesList, modelFolder, techName, cores = 1){
     #evaluate results with know deterministic component
     det.comp = seriesObj$det.series
     rTable   = evaluateResult(det.comp, resultSeries, params, techName, i)
-	bestIdx  = which.min(rTable$dist)
+	  bestIdx  = which.min(rTable$dist)
 
     #save model result into model folder
     model = list( model.name = techName, F = F,
