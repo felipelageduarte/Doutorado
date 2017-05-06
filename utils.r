@@ -11,8 +11,13 @@ require(Rssa)
 require(FNN)
 
 standardize <- function(x){
-  if(length(x) == 1) return(x)
-  else return((x-mean(x))/(sd(x)))
+  if(length(x) == 1){
+    return(x)
+  } else if(sd(x) == 0){
+    return(x-mean(x))
+  } else {
+    return((x-mean(x))/(sd(x)))
+  }
 }
 normalize <- function(values, a = -1, b = 1){
   max = max(values)
@@ -150,7 +155,7 @@ gridSearch <- function(F, params, seriesList, modelFolder, techName, cores = 1){
     #evaluate results with know deterministic component
     det.comp = seriesObj$det.series
     rTable   = evaluateResult(det.comp, resultSeries, params, techName, i)
-    bestIdx  = which.min(rTable$dist)
+    \\
 
     #save model result into model folder
     model = list( model.name = techName, F = F,
