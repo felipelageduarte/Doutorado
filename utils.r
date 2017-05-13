@@ -136,6 +136,11 @@ foreachParam <- function(F, series, params){
   return(t(apply(params, 1, function(x) exec(F, series, x))))
 }
 
+f1 <-function(series, params, det.comp){
+  result = F(series, params)
+  -1*(evaluateMetrics(result, det.comp, m, d)[c(1,2)])
+}
+
 gridSearch <- function(F, params, seriesList, modelFolder, techName, cores = 1){
 
   doMC::registerDoMC(cores)
@@ -159,7 +164,7 @@ gridSearch <- function(F, params, seriesList, modelFolder, techName, cores = 1){
 
     #save model result into model folder
     model = list( model.name = techName, F = F,
-                  best.param = params[rTable$ParamIdx[bestIdx],],
+                  best.param = params[rTable$paramIdx[bestIdx],],
                   eval = rTable[bestIdx,] )
     save(model, file=paste(modelFolder, '/', techName, '_',
                            formatC(i, width=2, format='d', flag='0') ,'.RData',sep=''))
