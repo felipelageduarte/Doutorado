@@ -100,8 +100,8 @@ evaluateResult <- function(obs, resultSeries, params, techName, testId){
   er = apply(resultSeries, 1, function(pred) evaluateMetrics(obs, pred, m, d))
 
   resultTable[1:length(validTestIdx),5:10] = t(er)
-  resultTable$dist = sqrt(standardize(resultTable$mddl)^2 +
-                          standardize(resultTable$mda)^2)
+  resultTable$dist = sqrt(normalize(resultTable$mddl, 0, 1)^2 +
+                          normalize(resultTable$mda, 0, 1)^2)
   resultTable$testId = testId
   resultTable$tech = techName
   resultTable$paramIdx = validTestIdx
@@ -139,8 +139,8 @@ gridSearch <- function(F, params, seriesList, modelFolder, techName, cores = 1){
 
   doMC::registerDoMC(cores)
 
- resultTable =	foreach::foreach(i=1:length(seriesList), .combine='rbind') %dopar% {
- 	st = Sys.time()
+  resultTable =	foreach::foreach(i=1:length(seriesList), .combine='rbind') %dopar% {
+ 	  st = Sys.time()
     cat(paste('ts:',i,'- begin\n'))
 
     #load series object from RData file
