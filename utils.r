@@ -29,9 +29,7 @@ md.dist <- function(d1, d2){
   return(sqrt(sum(diag(d%*%t(d)))))
 }
 mddl <-function(obs, pred){
-  return(rnorm(1))
-  dtw = dtw(obs, pred)
-  return(distanceToDiagonal(dtw$index1, dtw$index2, length(obs)))
+  return(TSDecomposition::mddl(pred, obs))
 }
 mda <- function(obs, pred, m, d){
   at1 = tseriesChaos::embedd(pred, m=m, d=d)
