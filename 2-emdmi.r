@@ -41,7 +41,7 @@ emdmiDec <- function(series, par){
                 as.data.frame(phases[,2:(n.size+1)]))
     if(length(mi) > 1){
       miDiff = abs(diff(mi))
-      l      = max(which(miDiff == max(miDiff)))+1
+      l      = max(which(miDiff == max(miDiff)))
     }
   }
   idx    = l:r.emd$nimf
