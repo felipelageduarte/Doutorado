@@ -23,6 +23,7 @@ standardize <- function(x){
 normalize <- function(values, a = -1, b = 1){
   max = max(values)
   min = min(values)
+  if((max - min) == 0) return(max)
   return( a + (((values - min)*(b - a))/(max - min)) )
 }
 md.dist <- function(d1, d2){
@@ -84,7 +85,7 @@ evaluateMetrics <- function(obs, pred, m, d){
   ))
 }
 evaluateResult <- function(obs, resultSeries, params, techName, testId){
-  resultTable = data.frame(testId   = numeric(0),  tech   = character(0),
+  resultTable = data.frame(testId   = numeric(0), tech    = character(0),
                            paramIdx = numeric(0), param   = character(0),
                            mddl     = numeric(0), mda     = numeric(0),
                            mae_md   = numeric(0), rmse_md = numeric(0),
@@ -98,6 +99,7 @@ evaluateResult <- function(obs, resultSeries, params, techName, testId){
   d = unique(params$d)
 
   er = apply(resultSeries, 1, function(pred) evaluateMetrics(obs, pred, m, d))
+  er[which(er < 10^-12)] = 0
 
   resultTable[1:length(validTestIdx),5:10] = t(er)
   resultTable$dist = sqrt(normalize(resultTable$mddl, 0, 1)^2 +
@@ -152,8 +154,8 @@ gridSearch <- function(F, params, seriesList, modelFolder, techName, cores = 1){
     resultSeries = foreachParam(F, seriesObj$series, params)
 
     #evaluate results with know deterministic component
-    det.comp = seriesObj$det.series
-    rTable   = evaluateResult(det.comp, resultSeries, params, techName, i)
+    obs      = seriesObj$det.series
+    rTable   = evaluateResult(obs, resultSeries, params, techName, i)
 	  bestIdx  = which.min(rTable$dist)
 
     #save model result into model folder
