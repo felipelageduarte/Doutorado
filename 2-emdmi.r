@@ -27,7 +27,7 @@ emd.fixed <- function(series, tt){
 }
 
 emdmiDec <- function(series, par){
-  r.emd  = emd.fixed(series, 1:length(series))
+  r.emd  = EMD::emd(series, tt, boundary = 'wave')#emd.fixed(series, 1:length(series))
   phases = apply(r.emd$imf, 2, function(x){calcPhase(x)})
   phases = cbind(phases, calcPhase(r.emd$residue))
   n.size = r.emd$nimf
