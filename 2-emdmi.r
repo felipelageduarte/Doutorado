@@ -18,16 +18,17 @@ calcPhase <- function(x){
 
 emd.fixed <- function(series, tt){
   r.emd  = EMD::emd(series, tt, boundary = 'wave')
-  r.emd$imf[which(abs(r.emd$imf) < 10^-12)] = 0
+  r.emd$imf[which(abs(r.emd$imf) < 10^-15)] = 0
   r.emd$imf = r.emd$imf[,which(colSums(r.emd$imf) != 0)]
   r.emd$imf = data.frame(r.emd$imf)
   r.emd$nimf = ncol(r.emd$imf)
-  r.emd$residue[which(r.emd$residue < (10^-12))] = 0
+  r.emd$residue[which(r.emd$residue < (10^-15))] = 0
   r.emd
 }
 
 emdmiDec <- function(series, par){
-  r.emd  = EMD::emd(series, 1:length(series), boundary = 'wave')#emd.fixed(series, 1:length(series))
+  #r.emd  = EMD::emd(series, 1:length(series), boundary = 'wave')
+  r.emd  = emd.fixed(series, 1:length(series))
   phases = apply(r.emd$imf, 2, function(x){calcPhase(x)})
   phases = cbind(phases, calcPhase(r.emd$residue))
   n.size = r.emd$nimf
