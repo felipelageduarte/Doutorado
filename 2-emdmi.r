@@ -18,11 +18,11 @@ calcPhase <- function(x){
 
 emd.fixed <- function(series, tt){
   r.emd  = EMD::emd(series, tt, boundary = 'wave')
-  r.emd$imf[which(abs(r.emd$imf) < 10^-15)] = 0
+  r.emd$imf[which(abs(r.emd$imf) < 10^-17)] = 0
   r.emd$imf = r.emd$imf[,which(colSums(r.emd$imf) != 0)]
   r.emd$imf = data.frame(r.emd$imf)
   r.emd$nimf = ncol(r.emd$imf)
-  r.emd$residue[which(r.emd$residue < (10^-15))] = 0
+  r.emd$residue[which(r.emd$residue < (10^-17))] = 0
   r.emd
 }
 
