@@ -31,7 +31,8 @@ emdmiDec <- function(series, par){
   phases = apply(r.emd$imf, 2, function(x){calcPhase(x)})
   phases = cbind(phases, calcPhase(r.emd$residue))
   n.size = r.emd$nimf
-  l = 1
+  # l = 1
+  idx = c(1)
   if(n.size > 1){
     mi = mapply(function(x,y) FNN::mutinfo(x,y),
                 as.data.frame(phases[,1:n.size]),
