@@ -16,11 +16,8 @@ calcPhase <- function(x){
   return(r)
 }
 
-emd.fixed <- function(xt, tt=NULL, tol=sd(xt)*0.1^2, max.sift=20, stoprule="type1",
-                      boundary="periodic", sm="none", smlevels=c(1), spar=NULL, alpha=NULL,
-                      check=FALSE, max.imf=10, plot.imf=FALSE, interm=NULL, weight=NULL){
-  r.emd  = EMD::emd(xt, tt, tol, max.sift, stoprule, boundary, sm, smlevels,
-                    spar, alpha, check, max.imf, plot.imf, interm, weight)
+emd.fixed <- function(series, tt){
+  r.emd  = EMD::emd(series, tt, boundary = 'wave')
   r.emd$imf[which(abs(r.emd$imf) < 10^-12)] = 0
   r.emd$imf = r.emd$imf[,which(colSums(r.emd$imf) != 0)]
   r.emd$imf = data.frame(r.emd$imf)
@@ -30,7 +27,7 @@ emd.fixed <- function(xt, tt=NULL, tol=sd(xt)*0.1^2, max.sift=20, stoprule="type
 }
 
 emdmiDec <- function(series, par){
-  r.emd  = emd.fixed(xt = series,  tt = 1:length(series), boundary = 'wave')
+  r.emd  = emd.fixed(series, 1:length(series))
   phases = apply(r.emd$imf, 2, function(x){calcPhase(x)})
   phases = cbind(phases, calcPhase(r.emd$residue))
   n.size = r.emd$nimf
@@ -39,12 +36,15 @@ emdmiDec <- function(series, par){
     mi = mapply(function(x,y) FNN::mutinfo(x,y),
                 as.data.frame(phases[,1:n.size]),
                 as.data.frame(phases[,2:(n.size+1)]))
-    if(length(mi) > 1){
-      miDiff = abs(diff(mi))
-      l      = max(which(miDiff == max(miDiff)))
-    }
+    idx = which(mi >= mean(mi))
+    # if(length(mi) > 1){
+    #
+    #   t = mean(mi)
+    #   miDiff = abs(diff(mi))
+    #   l      = max(which(miDiff == max(miDiff)))
+    # }
   }
-  idx    = l:r.emd$nimf
+  # idx    = l:r.emd$nimf
   if(length(idx) > 1){
     return(rowSums(r.emd$imf[,idx]) + r.emd$residue)
   } else{
