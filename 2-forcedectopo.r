@@ -48,7 +48,7 @@ forceDecTopo <- function(series, par){
     s.emb = pos
   }
 
-  return(s.emb[,1])
+  return(toTimeSpace(s.emb, embedded, delay))
 }
 
 params = expand.grid(

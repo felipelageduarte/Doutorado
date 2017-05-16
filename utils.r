@@ -26,6 +26,13 @@ normalize <- function(values, a = -1, b = 1){
   if((max - min) == 0) return(max)
   return( a + (((values - min)*(b - a))/(max - min)) )
 }
+toTimeSpace = function(attractor, m, d){
+  n = nrow(attractor)
+  ts = attractor[,1]
+  for(i in 2:m)
+    ts = c(ts, attractor[(n-d+1):n,i])
+  return(ts)
+}
 md.dist <- function(d1, d2){
   d = d1 - d2
   return(sqrt(sum(diag(d%*%t(d)))))
