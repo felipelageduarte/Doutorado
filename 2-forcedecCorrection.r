@@ -9,8 +9,6 @@ resultFolder = 'testResult'
 
 seriesList = loadSeriesFile(dataFolder)
 
-s.emb = tseriesChaos::embedd(series, m, d)
-
 dimSepMean <- function(s.emb, m, d){
   n = nrow(s.emb) + (m-1)*d
   idx = matrix(1:n, ncol=m, nrow=n)
@@ -53,7 +51,7 @@ forceDecCorrection   <- function(series, par){
       MoreArgs = list(delta=delta)
     ))
 
-    pos = dimSepMean(pos)
+    pos = dimSepMean(pos, embedded, delay)
     d = s.emb - pos
     disp = mean(sqrt(diag(d%*%t(d))))
 
